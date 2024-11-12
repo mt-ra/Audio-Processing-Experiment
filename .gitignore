@@ -1,0 +1,4 @@
+*.wav
+.vscode
+*.o
+app
