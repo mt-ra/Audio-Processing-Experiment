@@ -18,6 +18,6 @@ public:
     Transformer& operator=(const Transformer& other) = delete;
 
 public:
-    std::vector<std::complex<double>> dft(const std::vector<std::complex<double>>& c);
-    std::vector<std::complex<double>> idft(const std::vector<std::complex<double>>& ch);
+    std::vector<std::complex<double>> dft(const std::vector<std::complex<double>>& c) const;
+    std::vector<std::complex<double>> idft(const std::vector<std::complex<double>>& ch) const;
 };

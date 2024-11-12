@@ -18,7 +18,7 @@ Transformer::~Transformer() {
     fftw_free(out_buf);
 }
 
-std::vector<std::complex<double>> Transformer::dft(const std::vector<std::complex<double>>& c) {
+std::vector<std::complex<double>> Transformer::dft(const std::vector<std::complex<double>>& c) const {
     for (int i = 0; i < n; ++i) {
         in_buf[i][0] = c[i].real();
         in_buf[i][1] = c[i].imag();
@@ -31,7 +31,7 @@ std::vector<std::complex<double>> Transformer::dft(const std::vector<std::comple
     return ch;
 }
 
-std::vector<std::complex<double>> Transformer::idft(const std::vector<std::complex<double>>& ch) {
+std::vector<std::complex<double>> Transformer::idft(const std::vector<std::complex<double>>& ch) const {
     for (int i = 0; i < n; ++i) {
         in_buf[i][0] = ch[i].real();
         in_buf[i][1] = ch[i].imag();
