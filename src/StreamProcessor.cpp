@@ -45,10 +45,9 @@ void StreamProcessor::try_to_consume_pre_buf() {
         }
 
         // then process it using the window processing function
-        // TODO: change this later
-        auto processed_window = brickwall_lowpass(window, 100, transformer);
+        // TODO: change this later to allow dependency injection
+        auto processed_window = frequency_snap(window, 59, transformer, hann);
 
-        // TODO: change to processed window instead of window
         for (auto e : processed_window) {
             // don't overlap the windows just yet
             post_buf.push_back(e);
