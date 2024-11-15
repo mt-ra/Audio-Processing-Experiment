@@ -6,13 +6,6 @@
 
 std::vector<std::complex<double>> brickwall_lowpass(
     std::vector<std::complex<double>> const& signal,
-    size_t amount,
+    size_t cutoff,
     Transformer const& t
-);
-
-std::vector<std::complex<double>> frequency_snap(
-    std::vector<std::complex<double>> const& signal,
-    size_t target,
-    Transformer const& t,
-    std::vector<std::complex<double>>& hann
 );

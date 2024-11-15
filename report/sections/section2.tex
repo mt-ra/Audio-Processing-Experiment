@@ -2,14 +2,177 @@
 
 The link to the GitHub repo is \href{https://github.com/mt-ra/Audio-Processing-Experiment}{https://github.com/mt-ra/Audio-Processing-Experiment}.
 
-The goal was to create a program that processes a .wav file.
+The goal was to create a program that processes a .wav file. 
+This program should have the ability to apply a brickwall filter, 
+either high pass or low pass.
 
-Dependencies on:
+Initially I had issues with clicking being heard in the output, 
+before I learned that I was supposed to do \emph{windowing} on the signal before
+applying the DFT.
+
+The dependencies of the program are:
 \begin{itemize}
-    \item boost/circular\_buffer
-    \item portsf (C library for reading and writing wav files)
-    \item fftw (C library for FFT)
+    \item Boost/circular\_buffer
+    \item Portsf (C library for reading and writing wav files)
+    \item FFTW (C library for FFT)
 \end{itemize}
 
-\subsection{Writing wrappers for the C libraries}
-I started by writing C++ OOP style wrappers around the fftw library.
+\subsection{Writing wrappers for FFTW}
+I started by writing C++ OOP style wrappers around the FFTW library. 
+I defined a FFT \emph{transformer} class with methods to perform either a DFT or an IDFT on a vector of complex numbers.
+There needed to be object state because FFTW uses \emph{FFTW plans} which are expensive to compute, but
+can be used to perform multiple transformations on the same buffer, throughout the lifetime of the object.
+
+Furthermore, RAII principles could be used to ensure that resources allocated for the buffer and the FFTW 
+plan are freed when the transformer object goes out of scope.
+The copy constructor and copy assignment operators were also deleted for similar reasons,
+to ensure the validity of resource management.
+
+Below is the class definition of the Transformer class, as it is written in the header file \verb|Transformer.h|.
+\begin{verbatim}
+class Transformer {
+    size_t n;
+    fftw_complex *in_buf;
+    fftw_complex *out_buf;
+    fftw_plan forward_plan;
+    fftw_plan backward_plan;
+
+public:
+    Transformer(size_t n_);
+    ~Transformer();
+    Transformer(Transformer& t) = delete;
+    Transformer& operator=(const Transformer& other) = delete;
+
+public:
+    std::vector<std::complex<double>> dft(const std::vector<std::complex<double>>& c) const;
+    std::vector<std::complex<double>> idft(const std::vector<std::complex<double>>& ch) const;
+};
+\end{verbatim}
+
+\pagebreak
+
+\subsection{Writing wrappers for Portsf}
+My only use for Portsf was for reading frames of a wav file into my program,
+and writing frames to an output file. 
+I tried to write a class similar to C++'s standard input stream and output stream,
+where the bitshift operators are overloaded to perform stream extraction / insertion.
+Writing a class wrapper for Portsf was also important for RAII, as there
+were also resources associated with the files that were open for reading and writing
+that I needed to manage.
+
+The goal was to be able to use my classes in more or less the following way:
+\begin{verbatim}
+{
+    std::vector<std::complex<double>> inbuf(1024, 0);
+    psfin >> inbuf;
+    process(inbuf);
+    psfout << inbuf;
+}
+\end{verbatim}
+
+Below are the class definitions for my custom istream and ostream classes:
+\begin{verbatim}
+class psf_istream {
+    int in_fd;
+    int size;
+    int position;
+    PSF_PROPS props;
+
+public:
+    psf_istream(std::string filename);
+    ~psf_istream();
+
+public:
+    friend psf_istream& operator>>(psf_istream& in, std::vector<std::complex<double>>& buf);
+
+    PSF_PROPS get_props();
+
+    bool eof();
+};
+
+class psf_ostream {
+    int out_fd;
+    PSF_PROPS props;
+
+public:
+    psf_ostream(std::string filename, PSF_PROPS props_);
+    ~psf_ostream();
+
+public:
+    friend psf_ostream& operator<<(psf_ostream& out, std::vector<std::complex<double>> buf);
+
+    PSF_PROPS get_props();
+};
+\end{verbatim}
+
+
+\subsection{Program architecture}
+I wanted to be able to read from the portsf input stream into a vector.
+And then write this vector into an object which processes the samples and writes to the portsf output stream.
+
+\subsection{The StreamProcessor Class}
+A StreamProcessor object is fed audio signal samples, and when sufficient samples
+are stored into the pre-buffer, it builds windows of samples to process.
+
+I originally intended for the StreamProcessor class to be templated so that 
+it could send its output to any client specified output stream.
+This was so that the client could decide to write samples to the input buffer
+at any rate, and to extract the processed samples from the output buffer
+at any rate less than this.
+However I decided this would be too much work and just made it so that you 
+needed pass a \verb|psf_ostream| object by reference into the constructor, so that
+the contents of the output buffer were automatically writen to a \verb|psf_ostream|.
+
+Samples are written to the StreamProcessor object via the left shift operator.
+Overlapping windows are constructed and processed using a choice of functions,
+such as the brick wall filters or FIR filters.
+
+Below is the class definition
+\begin{verbatim}
+class StreamProcessor {
+    boost::circular_buffer<std::complex<double>> pre_buf;
+    boost::circular_buffer<std::complex<double>> post_buf;
+    size_t window_size;
+    size_t sample_rate;
+    psf_ostream& psfout;
+
+    std::vector<std::complex<double>> hann;
+    Transformer transformer;
+
+public:
+    StreamProcessor(   
+        psf_ostream& psfout_, 
+        size_t window_size_
+    );
+
+public:
+    friend StreamProcessor& operator<<(
+        StreamProcessor& proc, 
+        std::vector<std::complex<double>> in
+    );
+
+private:
+    void try_to_consume_pre_buf();
+    void try_to_consume_post_buf();
+};
+\end{verbatim}
+
+\subsection{Brickwall Filter Functions}
+The \verb|brickwall_lowpass| function has the following prototype:
+
+\begin{verbatim}
+std::vector<std::complex<double>> brickwall_lowpass(
+    std::vector<std::complex<double>> const& signal,
+    size_t cutoff,
+    Transformer const& t
+);
+\end{verbatim}
+
+Quite simply, the function takes a windowed set of samples, and performs a DFT.
+In the frequency domain, all the components associated with frequencies above 
+the cutoff frequency are set to zero.
+An IDFT is performed on the result.
+
+
+\subsection{FIR Filtering}
+To be discussed in the next section.
