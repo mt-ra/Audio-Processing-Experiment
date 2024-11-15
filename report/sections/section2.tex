@@ -1,0 +1,15 @@
+\section{Implementing a Brick-Wall Filter}
+
+The link to the GitHub repo is \href{https://github.com/mt-ra/Audio-Processing-Experiment}{https://github.com/mt-ra/Audio-Processing-Experiment}.
+
+The goal was to create a program that processes a .wav file.
+
+Dependencies on:
+\begin{itemize}
+    \item boost/circular\_buffer
+    \item portsf (C library for reading and writing wav files)
+    \item fftw (C library for FFT)
+\end{itemize}
+
+\subsection{Writing wrappers for the C libraries}
+I started by writing C++ OOP style wrappers around the fftw library.
