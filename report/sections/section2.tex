@@ -105,10 +105,7 @@ public:
 };
 \end{verbatim}
 
-
-\subsection{Program architecture}
-I wanted to be able to read from the portsf input stream into a vector.
-And then write this vector into an object which processes the samples and writes to the portsf output stream.
+\pagebreak 
 
 \subsection{The StreamProcessor Class}
 A StreamProcessor object is fed audio signal samples, and when sufficient samples
@@ -157,6 +154,8 @@ private:
 };
 \end{verbatim}
 
+\pagebreak
+
 \subsection{Brickwall Filter Functions}
 The \verb|brickwall_lowpass| function has the following prototype:
 
@@ -172,6 +171,9 @@ Quite simply, the function takes a windowed set of samples, and performs a DFT.
 In the frequency domain, all the components associated with frequencies above 
 the cutoff frequency are set to zero.
 An IDFT is performed on the result.
+
+The \verb|brickwall_highpass| filter basically does the same thing, 
+but eliminates all components associated with frequencies below the cutoff frequency instead.
 
 
 \subsection{FIR Filtering}

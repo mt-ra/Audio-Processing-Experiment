@@ -1,4 +1,67 @@
-\section{Implementing a FIR Filter}
+\section{Implementing a FIR filter}
+
+\subsection{Linear, time-invariant systems}
+For every possible input signal $x$, a system $H$ maps it to an output signal $H(x) = y$.
+
+\begin{center}\input{assets/system.tex}\end{center}
+A linear system is one which satisfies the superposition and scaling properties:
+
+\textbf{Superposition property:}\\
+A system $H$ satisfies the superposition property if applying the system to a sum
+of two signals $x_1$ and $x_2$ is equivalent to applying the system to the two signals,
+and then summing the results.
+$$H(x_1 + x_2) = H(x_1) + H(x_2)$$
+
+\textbf{Scaling Property:}\\
+A system $H$ satisfies the scaling property if applying a system to a signal that is scaled by a factor
+is equivalent to first applying the system to the signal and then scaling the result by that factor.
+$$H(\lambda x_1) = \lambda H(x_1)$$
 
 
-\subsection{Systems}
+\textbf{Time-invariance property:}\\
+A system is time invariant if shifting the input signal in time and then
+applying the system gives an output equivalent to if you first apply the system, 
+and then shift the result in time.
+
+\begin{center}\input{assets/shift.tex}\end{center}
+
+A system that is both linear and time-invariant is called a LTI system.
+
+\pagebreak 
+
+\subsection{Impulse response}
+The impulse response of a $h$ system is the output when the system is applied to the delta function $\delta$.
+$$h = H(\delta)$$
+
+\begin{center}\input{assets/impulse_response.tex}\end{center}
+Since any input signal is a sum of scaled and shifted delta functions, applying an 
+LTI system to an input signal is equivalent to taking the corresponding scalings and 
+shifts of the impulse response and adding them together. 
+Thus an LTI system can be completely described by its impulse response.
+
+\begin{center}\input{assets/linearity.tex}\end{center}
+
+Thus it's easy to see that applying an LTI system onto a signal is equivalent to 
+convolving the signal with the impulse response of the system.
+
+\subsection{Response of Sinusoids}
+
+
+\subsection{Frequency Response}
+If a sinusoid is fed into a time-invariant linear system, then the output signal is always sinusoidal.
+
+Frequency response
+
+The frequency response of the system is equal to the DFT of the impulse response,
+taking the magnitude of each phasor.
+
+\subsection{Filter Design}
+Instead of using a system's impulse response to find its frequency response, 
+you can use a desired frequency response and perform an IDFT to produce the 
+kernel for a system that has that desired frequency response.
+
+
+
+\subsection{Implementing FIR low pass and high pass filters}
+In order to implement a FIR, we first need to
+

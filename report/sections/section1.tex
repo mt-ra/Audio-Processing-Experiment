@@ -1,9 +1,71 @@
-\section{DFT Theory}
+\section{Audio Spectrograms}
 \subsection{Disclaimer}
 I want to start with the disclaimer that I do not study EE and that
 prior to starting this project for COMP4121 I had no knowledge of digital signal processing.
 The only things I knew before were from doing music production as a hobby.
 In short, some of this report may be misinformation. Have fun reading!
 
-\subsection{Audio Signals}
-\subsection{}
+\subsection{Audio signals}
+An discrete signal $x$ is a sequence of real valued samples $(\dots, x[-1], x[0], x[1], x[2], \dots)$.
+These real numbers correspond to the voltage that would be held across a speaker at each point in time.
+The number of samples per second of audio is known as the \emph{sampling rate}.
+\begin{center}\input{assets/audio_signal.tex}\end{center}
+
+\subsection{Interpreting DFT output}
+Suppose that a DFT is applied on a real signal of length $N$ (a power of 2).
+
+The DFT provides how a signal can be written as the summation of phasors,\\
+with frequencies $F=\{0, \pm 1, \pm 2, \dots, \pm (\frac{N}{2}-1), \frac{N}{2}\}$ cycles per window.
+
+$$c[t]=\frac{1}{N}\sum_{k\in F}\hat{c}[k]e^{i\omega k t}$$
+Where $\omega=\frac{2\pi}{N}$ is defined \emph{here} such that the phasor $e^{i\omega t}$ completes 1 cycles
+per window (N samples). For negative $k$, the expression
+$c[k]$ is defined to be $c[N-k]$.
+
+For example applying a DFT on a complex array $c$ of length $N$ gives an array $\hat{c}$
+of complex numbers. 
+For integers $0\leq k \leq \frac{N}{2}-1$,
+the value of $\hat{c}(k)$ the initial value of the phasor that has a frequency of $k$ cycles per window.
+
+Below is a diagram of how fast each phasor spins for a window size of $N$.
+For example the phasor corresponding to entry 1 of the array $\hat{c}$ rotates
+one cycle per window. The phasor corresponding to entry 6 rotates in the negative direction
+at a rate of 2 cycles per window.
+\begin{center}\input{assets/dft_array.tex}\end{center}
+
+\subsection{Short time Fourier transform}
+To analyse how the frequencies of a audio signal change over time, we can
+divide the audio stream into overlapping \emph{windows} of samples.
+The DFT is applied to each window, which gives information about the frequencies
+present at that moment in time.
+
+\begin{center}\includegraphics[height=5cm]{assets/windowing.png}\end{center}
+
+For best results, a windowing function is applied to each window, in order
+to taper the edges of the signal to zero to avoid discontinuities at the edges.
+
+\pagebreak
+
+\subsection{Spectrograms}
+A spectrogram is a visual tool used to see what frequencies are present at 
+each moment in time.
+This information is represented as a heatmap, where the input variables are on the $x$ and $y$ axes,
+and the magnitude of output is represented using colour/brightness.
+In the example screenshot below, frequency (on the $y$-axis) is shown on a logarithmic scale.
+Most spectrograms represent frequency on a log scale because humans perceive pitch logarithmically.
+
+\begin{center}\includegraphics[height=6cm]{assets/spectrogram.jpg}\end{center}
+
+It is a tool commonly used in electronic music production. 
+It makes use of the STFT to determine the frequency composition of the signal
+at each moment in time.
+
+A setting that can be changed by the user is the FFT window size.
+The size determines the frequency-resolution vs time-resolution tradeoff.
+The wider the windows, the more frequency bins there are resulting in more 
+frequency-resolution. However you will be capturing a larger portion of audio,
+which wouldn't work well if the frequencies are changing quickly over time, resulting in 
+reduced time-resolution (even if overlapping windows are used).
+
+\begin{center}\includegraphics[height=9cm]{assets/resolution.png}\end{center}
+

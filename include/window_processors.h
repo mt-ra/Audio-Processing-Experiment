@@ -9,3 +9,9 @@ std::vector<std::complex<double>> brickwall_lowpass(
     size_t cutoff,
     Transformer const& t
 );
+
+std::vector<std::complex<double>> brickwall_highpass(
+    std::vector<std::complex<double>> const& signal,
+    size_t cutoff,
+    Transformer const& t
+);
