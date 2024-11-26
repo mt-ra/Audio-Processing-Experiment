@@ -1,14 +1,16 @@
 #include <StreamProcessor.h>
 #include <iostream>
 #include <window_processors.h>
+#include <window_processor_functors.h>
 
 StreamProcessor::StreamProcessor(
     psf_ostream& psfout_, 
-    size_t window_size_
+    size_t window_size_,
+    WindowProcessor *win_processor_
 ) : 
     psfout(psfout_), 
     window_size(window_size_), 
-    transformer(window_size_),
+    win_processor(win_processor_),
     pre_buf(8 * window_size_),
     post_buf(8 * window_size_)
 {
@@ -45,8 +47,7 @@ void StreamProcessor::try_to_consume_pre_buf() {
         }
 
         // then process it using the window processing function
-        // TODO: change this later to allow dependency injection
-        auto processed_window = brickwall_highpass(window, 59, transformer);
+        auto processed_window = win_processor->operator()(window);
 
         for (auto e : processed_window) {
             // don't overlap the windows just yet

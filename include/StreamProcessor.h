@@ -6,6 +6,7 @@
 #include <portsf_wrappers.h>
 #include <lookup_gens.h>
 #include <window_processors.h>
+#include <window_processor_functors.h>
 
 class StreamProcessor {
     boost::circular_buffer<std::complex<double>> pre_buf; // where samples are stored before processing
@@ -13,14 +14,15 @@ class StreamProcessor {
     size_t window_size;
     size_t sample_rate;
     psf_ostream& psfout;
+    WindowProcessor *win_processor;
 
     std::vector<std::complex<double>> hann;
-    Transformer transformer;
 
 public:
     StreamProcessor(   
         psf_ostream& psfout_, 
-        size_t window_size_
+        size_t window_size_,
+        WindowProcessor *win_processor_
     );
 
 public:

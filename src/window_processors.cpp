@@ -30,3 +30,17 @@ std::vector<std::complex<double>> brickwall_highpass(
     }
     return t.idft(coeffs);
 }
+
+std::vector<std::complex<double>> convolve(
+    std::vector<std::complex<double>> const& signal,
+    std::vector<std::complex<double>> const& kernel,
+    Transformer const& t
+) {
+    int n = signal.size();
+    auto coeffs = t.dft(signal);
+    for (int i = 0; i < cutoff; ++i) {
+        coeffs[1 + i] = 0;
+        coeffs[n - 1 - i] = 0;
+    }
+    return t.idft(coeffs);
+}

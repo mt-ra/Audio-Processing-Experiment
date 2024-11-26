@@ -15,3 +15,9 @@ std::vector<std::complex<double>> brickwall_highpass(
     size_t cutoff,
     Transformer const& t
 );
+
+std::vector<std::complex<double>> fir_lowpass(
+    std::vector<std::complex<double>> const& signal,
+    std::vector<std::complex<double>> const& kernel,
+    Transformer const& t
+);
