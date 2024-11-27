@@ -7,6 +7,12 @@
 #include <window_processor_functors.h>
 
 int main(int argc, char *argv[]) {
+    if (argc != 5) {
+        std::cout << "usage: ./app filename.wav <WINDOW_SIZE> <FILTER_TYPE> <PARAM_VAL>" << std::endl;
+        std::cout << "eg: ./app countdown.wav 1024 bwlp 50" << std::endl;
+        return 1;
+    }
+
     psf_istream psfin(argv[1]);
     psf_ostream psfout("out.wav", psfin.get_props());
 
@@ -19,12 +25,21 @@ int main(int argc, char *argv[]) {
     // create all window processor objects
     FBrickwallLowpass bw_lp(param, winsize);
     FBrickwallHighpass bw_hp(param, winsize);
+    FConvLowpass c_lp(param, winsize);
+    FConvHighpass c_hp(param, winsize); // TODO: change
 
     WindowProcessor *win_proc;
     if (type == "bwlp") {
         win_proc = &bw_lp;
     } else if (type == "bwhp") {
         win_proc = &bw_hp;
+    } else if (type == "clp") {
+        win_proc = &c_lp;
+    } else if (type == "chp") {
+        win_proc = &c_hp;
+    } else {
+        std::cout << "filter types: bwlp, bwhp, clp, chp" << std::endl;
+        return 1;
     }
 
     StreamProcessor processor(psfout, winsize, win_proc);

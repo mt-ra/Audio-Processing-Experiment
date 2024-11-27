@@ -26,8 +26,6 @@ public:
     );
 
 public:
-
-    // writing to the stream
     friend StreamProcessor& operator<<(StreamProcessor& proc, std::vector<std::complex<double>> in);
 
 private:

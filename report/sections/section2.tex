@@ -127,26 +127,24 @@ such as the brick wall filters or FIR filters.
 Below is the class definition
 \begin{verbatim}
 class StreamProcessor {
-    boost::circular_buffer<std::complex<double>> pre_buf;
-    boost::circular_buffer<std::complex<double>> post_buf;
+    boost::circular_buffer<std::complex<double>> pre_buf; // where samples are stored before processing
+    boost::circular_buffer<std::complex<double>> post_buf; // where samples are stored after processing
     size_t window_size;
     size_t sample_rate;
     psf_ostream& psfout;
+    WindowProcessor *win_processor;
 
     std::vector<std::complex<double>> hann;
-    Transformer transformer;
 
 public:
     StreamProcessor(   
         psf_ostream& psfout_, 
-        size_t window_size_
+        size_t window_size_,
+        WindowProcessor *win_processor_
     );
 
 public:
-    friend StreamProcessor& operator<<(
-        StreamProcessor& proc, 
-        std::vector<std::complex<double>> in
-    );
+    friend StreamProcessor& operator<<(StreamProcessor& proc, std::vector<std::complex<double>> in);
 
 private:
     void try_to_consume_pre_buf();
@@ -156,7 +154,40 @@ private:
 
 \pagebreak
 
-\subsection{Brickwall Filter Functions}
+\subsection{Window Processor Functor Classes}
+To allow for 
+a pointer to a window processor functor object is passed in through the StreamProcessor constructor.
+All \verb|WindowProcessor| subclasses must overload the function call operator which 
+accepts a vector of complex doubles and returns a vector of complex doubles.
+
+\begin{verbatim}
+struct WindowProcessor {
+    virtual std::vector<std::complex<double>> operator()(
+        std::vector<std::complex<double>> const& signal
+    ) = 0;
+};
+\end{verbatim}
+
+Therefore in the main code depending on user input, the behavior of the \verb|StreamProcessor|
+may be altered using this dependency injection:
+
+\begin{verbatim}
+{
+    FBrickwallLowpass bw_lp(param, winsize);
+    FBrickwallHighpass bw_hp(param, winsize);
+
+    WindowProcessor *win_proc;
+    if (type == "bwlp") {
+        win_proc = &bw_lp;
+    } else if (type == "bwhp") {
+        win_proc = &bw_hp;
+    } //...
+
+    StreamProcessor processor(psfout, winsize, win_proc);
+}
+\end{verbatim}
+
+\subsection{Brickwall Filter Functors}
 The \verb|brickwall_lowpass| function has the following prototype:
 
 \begin{verbatim}
@@ -167,7 +198,7 @@ std::vector<std::complex<double>> brickwall_lowpass(
 );
 \end{verbatim}
 
-Quite simply, the function takes a windowed set of samples, and performs a DFT.
+Quite crudely, the function takes a windowed set of samples, and performs a DFT.
 In the frequency domain, all the components associated with frequencies above 
 the cutoff frequency are set to zero.
 An IDFT is performed on the result.
@@ -175,6 +206,5 @@ An IDFT is performed on the result.
 The \verb|brickwall_highpass| filter basically does the same thing, 
 but eliminates all components associated with frequencies below the cutoff frequency instead.
 
-
-\subsection{FIR Filtering}
+\subsection{Convolution Filtering}
 To be discussed in the next section.

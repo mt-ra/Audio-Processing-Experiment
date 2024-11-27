@@ -3,9 +3,21 @@
 For a real time domain signal $x:\mathbb{Z}\to\mathbb{R}$, its $z$ transform is a function $X:\mathbb{C}\to\mathbb{C}$, where
 $$X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n}.$$
 
+It can be seen that the DTFT is the same as the Z-transform but with the domain restricted to the 
+unit circle on the complex plane.
+
 \subsection{The transfer function of a system}
+The transfer function of a system is equal to the Z-transform of its impulse response.
+$$H(z)$$
+
+TODO:finish this
+
+For an LTI system suppose that $x$ is an arbitrary input signal and $y$ is the output.
+Let $X$ and $Y$ be the Z-transforms of these signals respectively.
 
 \subsection{Properties of Z-transforms}
+Linearity
+Shift Property
 
 
 \subsection{Desmos visualization of the transfer function}
@@ -14,4 +26,4 @@ transfer function of the system impact the frequency magnitude response of the s
 \href{https://www.desmos.com/calculator/cl4nz0pdtd}{https://www.desmos.com/calculator/cl4nz0pdtd}
 
 \subsection{Biquadratic filter implementation}
-
+This is implemented recursively.

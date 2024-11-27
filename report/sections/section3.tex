@@ -1,4 +1,4 @@
-\section{Implementing a FIR filter}
+\section{Implementing a FIR Convolution filter}
 
 \subsection{Linear, time-invariant systems}
 For every possible input signal $x$, a system $H$ maps it to an output signal $H(x) = y$.
@@ -45,25 +45,70 @@ Thus it's easy to see that applying an LTI system onto a signal is equivalent to
 convolving the signal with the impulse response of the system.
 
 \subsection{Response of Sinusoids}
+When a sinusoid is fed through an LTI system, the output signal is also sinusoidal,
+with the same frequency, but different amplitude and phase.
 
+$$y[t]=\sum_{i=0}^n h[i]x[t-i]$$
+
+Since the term on the right is the sum of sinusoids of equal frequency,
+the resulting output signal is also a sinusoid with the same frequency.
+
+Sinusoids of different frequencies $\omega$ which are fed into the same LTI filter
+may have their amplitudes (and phases) affected differently. 
+For every $\omega$ that corresponds to a frequency bin in the DFT, 
+the frequency response at $\omega$ is equal to the output amplitude when the input
+is a sinusoid with frequency $\omega$ and amplitude $1$.
+
+\pagebreak
+
+\subsection{Discrete-Time Fourier Transform}
+Unlike the DFT which can only be evaluated at certain frequences, 
+the DTFT gives a function that can be evaluated at any frequency on the continuous spectrum.
+$$DFT\left[\frac{n\omega}{2\pi}\right]=\sum_{t=0}^nx[t]e^{-i\omega t}$$
+$$DTFT(e^{i\omega})=\sum_{t=0}^nx[t]e^{-i\omega t}$$
+
+The DFT is essentially the DTFT sampled at the specific frequencies (1 to N/2 cycles per window).
 
 \subsection{Frequency Response}
-If a sinusoid is fed into a time-invariant linear system, then the output signal is always sinusoidal.
-
-Frequency response
-
-The frequency response of the system is equal to the DFT of the impulse response,
+The frequency response of a LTI system as a function of frequency $\omega$ is equal
+to the amount that the amplitude of a sinusoid with frequency $\omega$ would be scaled by when fed through the system.
+The frequency response of the system is equal to the DTFT of the impulse response,
 taking the magnitude of each phasor.
+
+This is because convolving a signal with the impulse response (convolution in the time domain)
+is equivalent to performing component-wise multiplication of the DFT of the signal with the DFT of the impulse response.
+Therefore the DFT of the impulse response represents how much each frequency component of the signal will be scaled by
+when the LTI system is applied.
+
+This comes from the discrete version of the convolution theorem.
+
+This can be generalised, where the frequency response can be calculated for continuous $\omega$ values 
+not necessarily corresponding to any DFT frequency bin. This is just done using the DTFT.
 
 \subsection{Filter Design}
 Instead of using a system's impulse response to find its frequency response, 
 you can use a desired frequency response and perform an IDFT to produce the 
 kernel for a system that has that desired frequency response.
 
+However for the purpose of making this implementation easier, I will just use 
+perform low pass filtering using a moving average. A moving average will 
+tend to attenuate high frequencies. A corresponding high pass filter kernel can be
+produced by using linearity properties.
+
+The moving average uses a rectangular kernel.
+The frequency response of this filter can be found by using the DTFT of the rectangular kernel
 
 
-\subsection{Implementing FIR low pass and high pass filters}
-In order to implement a FIR, we first need to
-\pagebreak
+\subsection{Implementation}
+This time the FFT will be used to perform a convolution of the windowed input signal
+with the kernel.
 
-$\mathcal{abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}$
+Making new \verb|WindowProcessor| functor subclasses.
+
+\begin{verbatim}
+std::vector<std::complex<double>> FConvLowpass::operator()(
+    std::vector<std::complex<double>> const& signal
+) {
+    return convolve(signal, kernel_, transformer_);
+}
+\end{verbatim}

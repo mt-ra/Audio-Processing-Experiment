@@ -37,10 +37,13 @@ std::vector<std::complex<double>> convolve(
     Transformer const& t
 ) {
     int n = signal.size();
-    auto coeffs = t.dft(signal);
-    for (int i = 0; i < cutoff; ++i) {
-        coeffs[1 + i] = 0;
-        coeffs[n - 1 - i] = 0;
+    auto dft_signal = t.dft(signal);
+    auto dft_kernel = t.dft(kernel);
+
+    // component-wise multiplication
+    for (int i = 0; i < n; ++i) {
+        dft_signal[i] *= dft_kernel[i];
     }
-    return t.idft(coeffs);
+
+    return t.idft(dft_signal);
 }
