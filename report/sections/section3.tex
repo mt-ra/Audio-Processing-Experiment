@@ -53,7 +53,7 @@ $$y[t]=\sum_{i=0}^n h[i]x[t-i]$$
 Since the term on the right is the sum of sinusoids of equal frequency,
 the resulting output signal is also a sinusoid with the same frequency.
 
-Sinusoids of different frequencies $\omega$ which are fed into the same LTI filter
+Sinusoids of different frequencies $\omega$ (measured in radians per sample) which are fed into the same LTI filter
 may have their amplitudes (and phases) affected differently. 
 For every $\omega$ that corresponds to a frequency bin in the DFT, 
 the frequency response at $\omega$ is equal to the output amplitude when the input
@@ -63,7 +63,7 @@ is a sinusoid with frequency $\omega$ and amplitude $1$.
 
 \subsection{Discrete-Time Fourier Transform}
 Unlike the DFT which can only be evaluated at certain frequences, 
-the DTFT gives a function that can be evaluated at any frequency on the continuous spectrum.
+the DTFT gives a function that can be evaluated at any frequency $\omega$ (measured in radians per sample) on the continuous spectrum.
 $$DFT\left[\frac{n\omega}{2\pi}\right]=\sum_{t=0}^nx[t]e^{-i\omega t}$$
 $$DTFT(e^{i\omega})=\sum_{t=0}^nx[t]e^{-i\omega t}$$
 
@@ -96,14 +96,84 @@ tend to attenuate high frequencies. A corresponding high pass filter kernel can 
 produced by using linearity properties.
 
 The moving average uses a rectangular kernel.
-The frequency response of this filter can be found by using the DTFT of the rectangular kernel
+The frequency response of this filter can be found by using the DTFT of the rectangular kernel.
+\pagebreak 
 
+Suppose that the length of the rectangular kernel is $W$ samples. 
+In other words, the kernel is $h$, where $h[t]=\frac{1}{W}$ for $0\leq t < W$, and $h[t]=0$ everywhere else.
+Finding the DTFT of the kernel:
+\begin{align*}
+    DTFT(e^{i\omega})
+    &= \sum_{t=0}^n h[t] e^{-i\omega t}\\
+    &= \frac{1}{W} \sum_{t=0}^W e^{-i\omega t}\\
+    &= \frac{1}{W} \frac{1-e^{-i\omega W }}{1-e^{i\omega }}\\
+    &= \frac{1}{W} \frac{e^{-i\omega W /2}(e^{i\omega W /2}-e^{-i\omega W /2})}{e^{-i\omega t/2}(e^{i\omega /2}-e^{-i\omega /2})}\\
+    &= \frac{1}{W} e^{-i\omega (W-1) /2} \frac{\sin (\omega W /2)}{\sin (\omega /2)}
+\end{align*}
+
+Taking the magnitude of both sides to find the frequency magnitude response gives
+$$|DTFT(e^{i\omega})|=\frac{1}{W}\left|\frac{\sin (\omega W /2)}{\sin (\omega /2)}\right|$$
+
+Below is a graph of the frequency magnitude response vs frequency (radians per sample).
+The green graph is when $W=6$ and the red graph is when $W=5$.
+\begin{center}\includegraphics[height=4cm]{assets/rectangledtft.png}\end{center}
+
+As expected, in both cases, high frequencies are attenuated.
+Also the wider the rectangle, the thinner the lobe of the frequency magnitude response,
+thus less high frequencies are let through.
+
+\pagebreak
 
 \subsection{Implementation}
 This time the FFT will be used to perform a convolution of the windowed input signal
 with the kernel.
 
-Making new \verb|WindowProcessor| functor subclasses.
+For these, I made new \verb|WindowProcessor| functor subclasses.
+The first is the \verb|FConvLowpass| subclass.
+
+\begin{verbatim}
+struct FConvLowpass : public WindowProcessor {
+    size_t width_;
+    Transformer transformer_;
+    std::vector<std::complex<double>> kernel_;
+
+    FConvLowpass(size_t width, size_t win_size);
+
+    std::vector<std::complex<double>> operator()(
+        std::vector<std::complex<double>> const& signal
+    ) override;
+};
+\end{verbatim}
+
+This class is constructed with a \verb|win_size| parameter.
+During the construction, the kernel vector is populated:
+
+\begin{verbatim}
+FConvLowpass::FConvLowpass(size_t width, size_t win_size) : 
+width_(width), transformer_(win_size), kernel_(win_size, 0) {
+    for (int i = 0; i < width; ++i) {
+        kernel_[i] = 1/((double) width);
+    }
+}
+\end{verbatim}
+
+Throughout the lifetime of a \verb|FConvLowpass| object, 
+this kernel vector is not modified.
+Therefore we do not need to construct and populate a new kernel vector 
+every time we want to perform a convolution.
+
+Like all other \verb|WindowProcessor| objects, the address of a
+\verb|FConvLowpass| object is passed in during the construction of a
+\verb|StreamProcessor| object (dependency injection).
+As audio data is inserted into the stream, this results in the
+function call operator being called:
+
+\begin{verbatim}
+    // then process it using the window processing functor
+    auto processed_window = win_processor->operator()(window);
+\end{verbatim}
+
+The \verb|FConvLowpass| class overrides the function call operator as shown below.
 
 \begin{verbatim}
 std::vector<std::complex<double>> FConvLowpass::operator()(
@@ -112,3 +182,52 @@ std::vector<std::complex<double>> FConvLowpass::operator()(
     return convolve(signal, kernel_, transformer_);
 }
 \end{verbatim}
+
+\pagebreak
+
+The convolve function takes two vectors of complex doubles of the same length.
+Then it performs DFTs on both of them.
+After this it performs component-wise multiplication, before finally
+performing an IDFT to return the result of the convolution.
+
+\begin{verbatim}
+std::vector<std::complex<double>> convolve(
+    std::vector<std::complex<double>> const& signal,
+    std::vector<std::complex<double>> const& kernel,
+    Transformer const& t
+) {
+    int n = signal.size();
+    auto dft_signal = t.dft(signal);
+    auto dft_kernel = t.dft(kernel);
+
+    // component-wise multiplication
+    for (int i = 0; i < n; ++i) {
+        dft_signal[i] *= dft_kernel[i];
+    }
+
+    return t.idft(dft_signal);
+}
+\end{verbatim}
+
+The \verb|FConvLowpass| functor just uses a rectangular kernel to perform
+a moving average. 
+The \verb|FConvHighpass| functor uses a kernel which is just the same rectangular
+kernel subtracted from the delta function.
+
+\begin{verbatim}
+FConvHighpass::FConvHighpass(size_t width, size_t win_size) 
+: width_(width), transformer_(win_size), kernel_(win_size, 0) {
+    for (int i = 0; i < width; ++i) {
+        kernel_[i] = -1/((double) width);
+    }
+    kernel_[0] += 1;
+}
+\end{verbatim}
+
+This works because the filter defined by this kernel is just the
+low pass filter subtracted from the identity filter, 
+meaning that the low frequencies are removed, only allowing high frequencies to pass.
+
+This is possible because convolving with the sum of two kernels is
+equivalent to performing separate convolutions with the kernels and then
+adding the resulting signals together.

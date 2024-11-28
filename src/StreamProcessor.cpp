@@ -46,7 +46,7 @@ void StreamProcessor::try_to_consume_pre_buf() {
             pre_buf.pop_front();
         }
 
-        // then process it using the window processing function
+        // then process it using the window processing functor
         auto processed_window = win_processor->operator()(window);
 
         for (auto e : processed_window) {

@@ -7,18 +7,26 @@ It can be seen that the DTFT is the same as the Z-transform but with the domain 
 unit circle on the complex plane.
 
 \subsection{The transfer function of a system}
-The transfer function of a system is equal to the Z-transform of its impulse response.
-$$H(z)$$
-
-TODO:finish this
-
 For an LTI system suppose that $x$ is an arbitrary input signal and $y$ is the output.
 Let $X$ and $Y$ be the Z-transforms of these signals respectively.
 
-\subsection{Properties of Z-transforms}
-Linearity
-Shift Property
+$$H(z)=\frac{Y(z)}{X(z)}$$
 
+The transfer function is not dependent on which arbitrary input signal is chosen.
+
+\subsection{Properties of Z-transforms}
+\textbf{Linearity}\\
+Let $a$ and $b$ be arbitrary signals. Let $A$ and $B$ be their Z-transforms respectively.
+The Z-transform of $a+b$ is equal to $A(z) + B(z)$.
+
+\textbf{Shift Property}\\
+Let $a$ be an arbitrary signal and define $b$ such that $b[t] = a[t-n]$ (time shift).
+Then the Z-transform of $b$ is $A(z)z^{-n}$.
+
+\subsection{Recurrence formula to transfer function}
+Suppose 
+
+\subsection{Transfer function to recurrence formula}
 
 \subsection{Desmos visualization of the transfer function}
 I created a demonstration on how the positions of poles and zeroes in the 

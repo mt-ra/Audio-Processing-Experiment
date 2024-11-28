@@ -17,6 +17,39 @@ The dependencies of the program are:
     \item FFTW (C library for FFT)
 \end{itemize}
 
+\subsection{Building and Usage}
+Making sure that all dependencies are installed, just run the makefile.
+This should create an executable file \verb|app|.
+
+To use the app to process a .wav file, place the .wav file in the same directory.
+Suppose the name of this file is "countdown.wav".
+
+If you want to divide the sound into windows of 1024 and remove
+all frequencies higher than 50 cycles per window, then you would use:
+
+\begin{verbatim}
+    ./app countdown.wav 1024 blp 50
+\end{verbatim}
+
+The general usage of the program is
+
+\begin{verbatim}
+    ./app <FILENAME> <WINDOWSIZE::number> <TYPE_OF_FILTER> <PARAM::number>
+\end{verbatim}
+
+The types of filters are 
+\begin{itemize}
+    \item blp (Brickwall Lowpass)
+    \item bhp (Brickwall Highpass)
+    \item clp (Convolution Lowpass using Moving Average)
+    \item chp (Convolution High using Moving Average)
+\end{itemize}
+
+The parameter for the brick wall filters represents the cutoff frequency (cycles per window).
+The parameter for the convolution FIR filters represents the width (in samples) of the moving average kernel.
+
+\pagebreak 
+
 \subsection{Writing wrappers for FFTW}
 I started by writing C++ OOP style wrappers around the FFTW library. 
 I defined a FFT \emph{transformer} class with methods to perform either a DFT or an IDFT on a vector of complex numbers.
@@ -127,8 +160,8 @@ such as the brick wall filters or FIR filters.
 Below is the class definition
 \begin{verbatim}
 class StreamProcessor {
-    boost::circular_buffer<std::complex<double>> pre_buf; // where samples are stored before processing
-    boost::circular_buffer<std::complex<double>> post_buf; // where samples are stored after processing
+    boost::circular_buffer<std::complex<double>> pre_buf;
+    boost::circular_buffer<std::complex<double>> post_buf;
     size_t window_size;
     size_t sample_rate;
     psf_ostream& psfout;
@@ -144,7 +177,10 @@ public:
     );
 
 public:
-    friend StreamProcessor& operator<<(StreamProcessor& proc, std::vector<std::complex<double>> in);
+    friend StreamProcessor& operator<<(
+        StreamProcessor& proc, 
+        std::vector<std::complex<double>> in
+    );
 
 private:
     void try_to_consume_pre_buf();
